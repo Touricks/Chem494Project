@@ -22,9 +22,9 @@ export PATH=${HOME}/Tutorial/Progs:${PATH}
 
 ## Execution instructions
 1. Add data to data/ folder.
-Place one fastq file in it, indicating we would provide prediction based on data from this file.
+2. Place one fastq file in it, indicating we would provide prediction based on data from this file.
 
-Filename can be anything but only one file should exist in this folder.
+    Filename can be anything but only one file should exist in this folder.
 3. Enter the src folder and execute the program
 ```
 python3 main.py 15
