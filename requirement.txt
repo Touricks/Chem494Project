@@ -1,0 +1,6 @@
+pyfastaq
+numpy
+pandas
+matplotlib
+scipy
+scikit-bio
