@@ -37,7 +37,7 @@ def display_comparison_result():
                     data.append([seq.get_aptamer_seq(),seq.get_aptamer_count(),seq.get_aptamer_ct(),clunum,kmer1,kmer2,size,x[1]])
                     break
         df=pd.DataFrame(data,columns=['Sequence','Count in curr rnd','ct','ClusterNum','Kmer1','Kmer2','SizeofClu','Count in Final rnd'])
-        path= str(os.getcwd()) + "/testexcel"
+        path= str(os.getcwd()) + "/result"
         df.to_csv(path+f'/Round {rnd[round]} sequences which appears in Round {final[0]}.csv', index=False)
 
 if __name__ == '__main__': 
