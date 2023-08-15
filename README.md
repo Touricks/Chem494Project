@@ -25,7 +25,7 @@ export PATH=${HOME}/Tutorial/Progs:${PATH}
 2. Place one fastq file in it, indicating we would provide prediction based on data from this file.
 
     Filename can be anything but only one file should exist in this folder.
-3. Enter the src folder and execute the program
+3. Enter the src folder and execute the program with command line:
 ```
 python3 main.py 15
 ```
