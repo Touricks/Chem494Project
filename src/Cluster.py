@@ -269,5 +269,5 @@ class Cluster():
         for x in range(len(self.head)):
             data.append([self.head[x].eigenkmer1, self.head[x].eigenkmer2,self.head[x].size,self.head[x].score])
         df=pd.DataFrame(data, columns=['kmer1','kmer2','size','score'])
-        path= str(os.getcwd()) + "/testexcel"
+        path= str(os.getcwd()) + "/result"
         df.to_csv(path+f'/Final_cluster_for_round{self.round}.csv', index=False)
