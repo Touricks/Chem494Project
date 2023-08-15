@@ -50,13 +50,10 @@ if __name__ == '__main__':
             parameter[1]='without_primer'
         parameter[2]=int(syspara[1])
     elif len(syspara)==1:
-        if syspara[0]=='0':
-            parameter[1]='with_primer'
-        else:
-            parameter[1]='without_primer'
-        parameter[2]=15
+        parameter[1]='without_primer'
+        parameter[2]=int(syspara[0])
     elif len(syspara)==0:
-        parameter[1]='with_primer'
+        parameter[1]='without_primer'
         parameter[2]=15
     else:
         print('ERROR, Number of argument is wrong')
