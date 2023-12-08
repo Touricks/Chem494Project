@@ -3,12 +3,13 @@ from Aptamer import Aptamer
 import pandas as pd
 import os
 class Kmer():
-    def __init__(self,seqdata:list[Sequence],weighted,round):
+    def __init__(self,seqdata:list[Sequence],round,num1,num2):
         self.candidate={'5':{},'6':{},'7':{},'8':{},'9':{},'10':{},'11':{},'12':{}}
         self.cand_pair={'5':[],'6':[],'7':[]}
         self.data=seqdata
-        self.weighted=weighted
         self.round=round
+        self.num1=num1
+        self.num2=num2
 
     def set_candidate(self):
         for data in self.data:
@@ -18,16 +19,10 @@ class Kmer():
                 for id in range(len(x.kmer)):
                     seq=x.kmer[id]
                     kmerlen=x.kmerlen[id]
-                    if self.weighted:
-                        if seq not in self.candidate[str(kmerlen)]:
-                            self.candidate[str(kmerlen)][seq]=y
-                        else:
-                            self.candidate[str(kmerlen)][seq]+=y
+                    if seq not in self.candidate[str(kmerlen)]:
+                        self.candidate[str(kmerlen)][seq]=y
                     else:
-                        if seq not in self.candidate[str(kmerlen)]:
-                            self.candidate[str(kmerlen)][seq]=1
-                        else:
-                            self.candidate[str(kmerlen)][seq]+=1
+                        self.candidate[str(kmerlen)][seq]+=y
 
         #Display the chosen kmer to excel file
         data=[]
@@ -47,9 +42,9 @@ class Kmer():
                 candidate_list.append([x,self.candidate[str(kmerlen)][x]])
             candidate_list.sort(key=lambda x: x[1],reverse=True)
             if kmerlen<8:
-                maxlen=min(30,len(candidate_list))
+                maxlen=min(self.num1,len(candidate_list))
             else:
-                maxlen=min(500,len(candidate_list))
+                maxlen=min(self.num2,len(candidate_list))
             if kmerlen<8:
                 self.cand_pair[str(kmerlen)]=list(map(lambda x:x[0],candidate_list[:maxlen]))
             else:

@@ -3,6 +3,7 @@ class Aptamer():
         self.seq=seq
         self.ct=ct
         self.dg=dg
+        self.origin_kmer=[]
         self.kmer=[]
         self.kmerpos=[]
         self.kmerlen=[]
@@ -15,22 +16,29 @@ class Aptamer():
     def _add_hairpin(self):
         s=self.ct
         start=0
-        state=0
         endpos=0
         i=0
+        startstack=[]
+        #print(s)
         while i<len(s):
-            if s[i]=='(':
-                state=1
-                start=i
-            elif (s[i]==')')and(state==1):
-                self.hairpinnum+=1
+            if (s[i]=='(')and(s[i+1]!='('):
+                startstack.append(i)
+            elif (s[i]==')'):
+                cnt=1
                 endpos=i
+                #print(startstack)
+                start=startstack.pop()
                 while (start>0)and(endpos<len(s)-1)and(s[start-1]=='(')and(s[endpos+1]==')'):
                     start-=1
-                    endpos+=1
-                self.hairpinpos.append([start,endpos])
+                    endpos+=1 
+                    cnt+=1
+                if cnt>=4:
+                    self.hairpinnum+=2
+                    self.hairpinpos.append([start,start+cnt-1])
+                    self.hairpinpos.append([endpos-cnt+1,endpos])
+                if (start>0)and(s[start-1]=='('):
+                    startstack.append(start-1)
                 i=endpos
-                state=0
             i+=1
 
     def _add_kmer(self):
@@ -44,6 +52,8 @@ class Aptamer():
             else:
                 seq=self.seq[self.hairpinpos[x-1][1]+1:self.hairpinpos[x][0]]
                 startpos=self.hairpinpos[x-1][1]+1
+            if seq!='':
+                self.origin_kmer.append(seq)
             for kmerlen in range(12,4,-1):
                 for x in range(len(seq)-kmerlen+1):
                     self.kmer.append(seq[x:x+kmerlen])
@@ -64,3 +74,6 @@ class Aptamer():
     
     def get_ct(self):
         return self.ct
+
+    def get_kmer2(self):
+        return self.origin_kmer

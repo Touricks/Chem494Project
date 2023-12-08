@@ -11,73 +11,62 @@ def clear_temp_files():
     subprocess.call([cmd], shell=True)
     cmd="rm temp_seqs.txt"
     subprocess.call([cmd], shell=True)
-
-def get_info(seq:Sequence):
-    return [seq.get_aptamer_seq(),seq.get_aptamer_count()]
-
-def display_comparison_result():
-    Finallist=list(map(get_info,finaldata.get_sequence_list()))
-    Finallist=Finallist[:300]
-    for round in range(len(roundData)):
-        data=[]
-        for seq in roundData[round].get_sequence_list():
-            for x in Finallist:
-                if seq.get_aptamer_seq()==x[0]:
-                    clunum=seq.get_cluster_num()
-                    if clunum==-1:
-                        kmer1='None'
-                        kmer2='None'
-                        size=0
-                    else:
-                        cluster=roundData[round].cludata
-                        theHead=cluster.get_cluster_head(clunum)
-                        kmer1=theHead.eigenkmer1
-                        kmer2=theHead.eigenkmer2
-                        size=theHead.get_size()
-                    data.append([seq.get_aptamer_seq(),seq.get_aptamer_count(),seq.get_aptamer_ct(),clunum,kmer1,kmer2,size,x[1]])
-                    break
-        df=pd.DataFrame(data,columns=['Sequence','Count in curr rnd','ct','ClusterNum','Kmer1','Kmer2','SizeofClu','Count in Final rnd'])
-        path= str(os.getcwd()) + "/result"
-        df.to_csv(path+f'/Round {rnd[round]} sequences which appears in Round {final[0]}.csv', index=False)
-
-if __name__ == '__main__': 
-    parameter=[True,None,None]
-    syspara=sys.argv[1:]
-    if len(syspara)==2:
-        if syspara[0]=='0':
-            parameter[1]='with_primer'
+   
+def evaluation(predData,evaData,rnd):
+    for feature in range(len(predData)):
+        candidates=predData[feature].get_recommendation()
+        winner=[]
+        for candidate in candidates:
+            abundance=[]
+            for eva_rnd in evaData:
+                number=eva_rnd.get_abundance(candidate)
+                abundance.append(number)
+            result=True
+            for x in range(len(abundance)-1):
+                if abundance[x]>abundance[x+1]:
+                    result=False
+            if result==True:
+                winner.append(candidate) #Test
+                #winner.append(candidate)
+        print(f"The final recommendation for {rnd[feature]} is:")
+        if len(winner)>0:
+            print(f"There are {len(winner)} aptamer for this target. They are")    
+            for x in range(len(winner)):
+                color=hash(winner[x][0])%8+(3*hash(winner[x][0]))%2*60+30
+                print(f"\033[{color}m{winner[x]}\033[0m")
+                # print(f"3[{color}m{winner[x]}[0m")
+                # print("3[30mSuixinBlog: https://suixinblog.cn3[0m")
         else:
-            parameter[1]='without_primer'
-        parameter[2]=int(syspara[1])
-    elif len(syspara)==1:
-        parameter[1]='without_primer'
-        parameter[2]=int(syspara[0])
-    elif len(syspara)==0:
-        parameter[1]='without_primer'
-        parameter[2]=15
-    else:
-        print('ERROR, Number of argument is wrong')
-        sys.exit()
-
-    if parameter[1]=='with_primer':
-        binding_target='theophylline'
-        rnd=['15','16','20']
-        final=['22']
-        roundData=[]
-        for x in final:
-            clear_temp_files()
-            finaldata=Round(binding_target,x)
-            finaldata.set_para(parameter[0],parameter[1],parameter[2])
-            finaldata.set_data()
-        for x in rnd:
-            clear_temp_files()
-            data=Round(binding_target,x)
-            data.set_para(parameter[0],parameter[1],parameter[2])
-            data.set_data()
-            roundData.append(data)
-        display_comparison_result()
-    else:
+            print("We didn't find any aptamer based on this evaluation")
+        df=pd.DataFrame(winner, columns=['recommendation']) #Test
+        #df=pd.DataFramce(winner)
+        path= str(os.getcwd()) + "/dataset"
+        df.to_csv(path+f'/Recommendation after evaluation for target {rnd[feature]}.csv', index=False)
+    
+if __name__ == '__main__': 
+    # parameter= [lenofseq,goal,num1,num2] 
+    # 起始值与文件中的primer有关
+    # lenofseq: 序列长度
+    # goal: 选取的序列数量
+    # num1: kmerlen<8时的统计数量，推荐为40
+    # num2: kmerlen>8时的统计数量，推荐为1000
+    parameter=[46,10,50,1000]
+    #parameter=['with_primer',20,4,10]  # Test
+    rnd=['atpr10']
+    final=[]
+    predData=[]
+    evaData=[]
+    for x in rnd:
         clear_temp_files()
-        data=Round(None,None)
-        data.set_para(parameter[0],parameter[1],parameter[2])
+        data=Round(x)
+        data.set_para(parameter[0],parameter[1],parameter[2],parameter[3])
         data.set_data()
+        predData.append(data)
+        
+    for x in final:
+        clear_temp_files()
+        finaldata=Round(x)
+        finaldata.set_para(parameter[0],parameter[1],parameter[2],parameter[3])
+        finaldata.set_seq_abundance()
+        evaData.append(finaldata)
+    evaluation(predData,evaData,rnd)

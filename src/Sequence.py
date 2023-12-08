@@ -1,9 +1,8 @@
 from Aptamer import Aptamer
 class Sequence():
-    def __init__(self,apt:Aptamer,count,weighted):
+    def __init__(self,apt:Aptamer,count):
         self.apt = apt
         self.count = count
-        self.weighted = weighted
         self.used=False
         self.clunum=-1
 
@@ -39,3 +38,7 @@ class Sequence():
         kmers,pos,length=x.get_kmer()
         return kmers
     
+    def get_kmer_list2(self):
+        x=self.apt
+        kmers=x.get_kmer2()
+        return kmers
