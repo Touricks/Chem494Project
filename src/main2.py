@@ -34,8 +34,8 @@ def evaluation_ed2(predData,rnd,seqlen):
             filterdata.append([feature,rnd1[feature]['represent'],rnd1[feature]['count'],rnd2[feature]['count'],0])
     data.sort(key=lambda x:x[3],reverse=True)
     #print(data)
-    print(predData[0].cludata.count_for_test)
-    print(predData[1].cludata.count_for_test)
+    #print(predData[0].cludata.count_for_test)
+    #print(predData[1].cludata.count_for_test)
     df=pd.DataFrame(data, columns=['feature',rnd[1],rnd[0],'ratio','seq','ct'])
     path= str(os.getcwd()) + "/dataset"
     df.to_csv(path+f'/Evaluation_from_{rnd[0]}_to_{rnd[1]}.csv', index=False)
@@ -69,9 +69,9 @@ def evaluation_ed3(predData,rnd,seqlen):
             filterdata.append([feature,rnd1[feature]['represent'],rnd1[feature]['count'],rnd2[feature]['count'],rnd3[feature]['count'],0])
     data.sort(key=lambda x:x[4]*x[5],reverse=True)
     #print(data)
-    print(predData[0].cludata.count_for_test)
-    print(predData[1].cludata.count_for_test)
-    print(predData[2].cludata.count_for_test)
+    print(len(predData[0].cludata.head2feature))
+    print(len(predData[1].cludata.head2feature))
+    print(len(predData[2].cludata.head2feature))
     df=pd.DataFrame(data, columns=['feature',rnd[2],rnd[1],rnd[0],'ratio32','ratio21','ratio31','seq','ct'])
     path= str(os.getcwd()) + "/dataset"
     df.to_csv(path+f'/Evaluation_from_{rnd[0]}_through_{rnd[1]}_to_{rnd[2]}.csv', index=False)
@@ -93,19 +93,21 @@ def evaluation_ed3(predData,rnd,seqlen):
     df.to_csv(path+f'/Simplified_evaluation_from_{rnd[0]}_through_{rnd[1]}_to_{rnd[2]}.csv', index=False)
 
 if __name__ == '__main__': 
-    # parameter= [lenofseq,goal，num1,num2] 
-    # lenofseq: 序列长度有多少
-    # goal: 要选取的序列数量
-    # num1: kmerlen<8时的统计数量，推荐为40
+    # parameter= [lenofseq,goal,num1,num2,op] 
+    # 起始值与文件中的primer有关
+    # lenofseq: 序列长度
+    # goal: 选取的序列数量
+    # num1: kmerlen<8时的统计数量，推荐为50
     # num2: kmerlen>8时的统计数量，推荐为1000
-    parameter=[46,10,50,1000]
-    rnd=['atpr6','atpr9','atpr10']
+    # op: 是否允许复用ct文件 警告：ct文件包含序列组成的基本信息
+    parameter=[36,10,50,1000,False]
+    rnd=['atpr6','atpr9']
     predData=[]
     for x in rnd:
         clear_temp_files()
         data=Round(x)
-        data.set_para(parameter[0],parameter[1],parameter[2],parameter[3])
+        data.set_para(parameter[0],parameter[1],parameter[2],parameter[3],parameter[4])
         data.set_data_ed2()
         predData.append(data)
-    #evaluation_ed2(predData,rnd,parameter[0])
-    evaluation_ed3(predData,rnd,parameter[0])
+    evaluation_ed2(predData,rnd,parameter[0])
+    #evaluation_ed3(predData,rnd,parameter[0])

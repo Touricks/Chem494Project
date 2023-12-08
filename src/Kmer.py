@@ -11,6 +11,13 @@ class Kmer():
         self.num1=num1
         self.num2=num2
 
+    def __display_candidate(self):
+        for kmerlen in range(5,8):
+            print(f'kmerlen={kmerlen}')
+            for seq in self.candidate[str(kmerlen)].keys():
+                print(f'{seq} : {self.candidate[str(kmerlen)][seq]}')
+            print('')
+
     def set_candidate(self):
         for data in self.data:
             x=data.apt
@@ -23,7 +30,7 @@ class Kmer():
                         self.candidate[str(kmerlen)][seq]=y
                     else:
                         self.candidate[str(kmerlen)][seq]+=y
-
+        #elf.__display_candidate()
         #Display the chosen kmer to excel file
         data=[]
         for kmerlen in range(5,13):
@@ -36,20 +43,20 @@ class Kmer():
     def get_kmer_list(self):
         kmerlist=[]
         for kmerlen in range(12,4,-1):
-            key=self.candidate[str(kmerlen)].keys()
+            keys=self.candidate[str(kmerlen)].keys()
             candidate_list=[]
-            for x in key:
+            for x in keys:
                 candidate_list.append([x,self.candidate[str(kmerlen)][x]])
             candidate_list.sort(key=lambda x: x[1],reverse=True)
+            
             if kmerlen<8:
                 maxlen=min(self.num1,len(candidate_list))
-            else:
-                maxlen=min(self.num2,len(candidate_list))
-            if kmerlen<8:
                 self.cand_pair[str(kmerlen)]=list(map(lambda x:x[0],candidate_list[:maxlen]))
             else:
+                maxlen=min(self.num2,len(candidate_list))
                 for x in candidate_list[:maxlen]:
                     kmerlist.append([x[0]])
+
         for kmer1 in self.cand_pair['6']:
             for kmer2 in self.cand_pair['6']:
                 kmerlist.append([kmer1,kmer2])

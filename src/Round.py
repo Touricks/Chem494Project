@@ -7,6 +7,7 @@ from pyfastaq import sequences
 import pandas as pd
 import math
 import hashlib
+import shutil
 
 class Round():
     def __init__(self,round=None):
@@ -23,11 +24,12 @@ class Round():
         self.recommend=None
         self.amount_seq=0
         
-    def set_para(self,op,goal,num1,num2):
+    def set_para(self,op,goal,num1,num2,switch):
         self.lenofseq = op
         self.goal= goal
         self.num1=num1
         self.num2=num2
+        self.switch=switch
 
     def set_data(self):
         seq_list=self.__get_sequence_with_primer(self.round,'prediction') #Build seq_list from fasta file
@@ -36,7 +38,7 @@ class Round():
         self.kmerdata=Kmer(self.seqdata,self.round,self.num1,self.num2)# Build kmerdata from seqdata, initialize with instance of Kmer
         self.kmerdata.set_candidate()# Set candidate Eigenkmers for the execution of method get_kmer_list()
         kmerlist=self.kmerdata.get_kmer_list()# Get kmerlist from kmerdata
-        self.cludata=Cluster(self.seqdata,kmerlist,self.round,self.goal,self.amount_seq) #Build cludata from seqdata, initialize with instance of Cluster
+        self.cludata=Cluster(self.seqdata,kmerlist,self.round,self.goal,self.amount_seq,self.num1**2*2+self.num2*5) #Build cludata from seqdata, initialize with instance of Cluster
         self.cludata.set_cluster_data() #Make cluster based on seqdata, then gather size/kmer data for each cluster
         self.result=self.cludata.get_recommend_aptamer()
         self.__result_display()
@@ -47,13 +49,14 @@ class Round():
         This time, we use entire feature as indication
         '''
         seq_list=self.__get_sequence_with_primer(self.round,'prediction') #Build seq_list from fasta file
+        print('finished reading')
         count_seq=self.__get_count_single_rnd(seq_list) #Build count_seq from seq_list to gather count data
+        print('finished counting')
         self.__add_RNAfold_data(count_seq) #Add RNAfold data to count_seq, gather dg/ct data
-        self.cludata=Cluster(self.seqdata,None,self.round,self.goal,self.amount_seq)
+        print('finished adding RNAfold')
+        self.cludata=Cluster(self.seqdata,None,self.round,self.goal,self.amount_seq,self.num1**2*2+self.num2*5)
         self.cludata.set_cluster_data2()
-    
-    def get_cludata(self):
-        return self.cludata.get_cluster_head2()
+        print('finished clustering')
 
     def set_seq_abundance(self):
         seq_list=self.__get_sequence_with_primer(self.round,'evaluation') #Build seq_list from fasta file
@@ -120,9 +123,9 @@ class Round():
         pos=seq.find(primer[0].strip())
         if pos==-1:
             success=False
-            return None, success
-        start=pos+len(primer[0].strip())
-        N30=seq[start:start+self.lenofseq]
+            return None, success    
+        start=pos+len(primer[0].strip())-6
+        N30=seq[start:start+self.lenofseq+12]
         success = True
         return N30, success
     
@@ -157,17 +160,30 @@ class Round():
         print(f"SEQ_LIST LENGTH=",len(seq_list))
         count_list=count_df['count'].tolist() #将出现次数转化为列表
         #造ct，dg数据
-        seq_file = str(os.getcwd()) + "/temp_seqs.txt"
-        with open(seq_file, 'w') as f:
-            for x in seq_list:
-                f.write(x + "\n")
-        f.close()
-        ct_file = str(os.getcwd()) + "/temp_ct.txt"
-        cmd = f"RNAfold --jobs={multiprocessing.cpu_count()} --infile={seq_file} --outfile={ct_file.split('/')[-1]} --noPS -T {37.0} --noconv"
-        subprocess.call([cmd], shell=True)
+        flag=0
+        new_ct_file=None
+        #是否保留有ct文件的序列
+        path_ct = str(os.getcwd())+f"/ctfiledatabase/"
+        for file in os.listdir(path_ct):
+            if file.replace("_ct.txt", "") == self.round:
+                new_ct_file=path_ct+file
+                flag=1
+                print('ct file already exists')
+                break
+        if (self.switch==False)or(flag==0):
+            seq_file = str(os.getcwd()) + "/temp_seqs.txt"
+            with open(seq_file, 'w') as f:
+                for x in seq_list:
+                    f.write(x + "\n")
+            f.close()
+            ct_file="temp_ct.txt"
+            new_ct_file=str(os.getcwd()) + f"/ctfiledatabase/{self.round}_ct.txt"
+            cmd = f"RNAfold --jobs={multiprocessing.cpu_count()} --infile={seq_file} --outfile={ct_file.split('/')[-1]} --noPS -T {37.0} --noconv"
+            subprocess.call([cmd], shell=True)
+            shutil.move(ct_file, new_ct_file)
         ct_list=[]
         dg_list=[]
-        with open(ct_file, 'r') as f:
+        with open(new_ct_file, 'r') as f:
             for i, line in enumerate(f):
                 if i % 2 == 0:
                     sequence = line.strip()
@@ -189,7 +205,6 @@ class Round():
             self.cludata.cluster_display()
         else:
             print("No cluster data available.")
-            
         print("Recommend sequence:")
         cnt=0
         data=[]
@@ -221,12 +236,4 @@ class Round():
             data.append([seq.get_aptamer_seq(),seq.get_aptamer_count(),seq.get_aptamer_ct(),seq.get_cluster_num()])
         df=pd.DataFrame(data, columns=['sequence','counts','ct','cluster'])
         path= str(os.getcwd()) + "/dataset"
-        df.to_csv(path+f'/Sequence_Data_for_{self.round}_round.csv', index=False)
-    
-    def __record_abundance(self):
-        data=[]
-        for seq in self.seqdata:
-            data.append([seq.get_aptamer_seq(),seq.get_aptamer_count(),seq.get_aptamer_ct(),seq.get_cluster_num()])
-        df=pd.DataFrame(data, columns=['sequence','counts','ct','cluster'])
-        path= str(os.getcwd()) + "/testexcel"
         df.to_csv(path+f'/Sequence_Data_for_{self.round}_round.csv', index=False)

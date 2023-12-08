@@ -32,7 +32,7 @@ class Aptamer():
                     start-=1
                     endpos+=1 
                     cnt+=1
-                if cnt>=4:
+                if cnt>=3:
                     self.hairpinnum+=2
                     self.hairpinpos.append([start,start+cnt-1])
                     self.hairpinpos.append([endpos-cnt+1,endpos])
@@ -55,7 +55,7 @@ class Aptamer():
             if seq!='':
                 self.origin_kmer.append(seq)
             for kmerlen in range(12,4,-1):
-                for x in range(len(seq)-kmerlen+1):
+                for x in range(len(seq)-kmerlen,0,-2):
                     self.kmer.append(seq[x:x+kmerlen])
                     self.kmerpos.append(x+startpos)
                     self.kmerlen.append(kmerlen)

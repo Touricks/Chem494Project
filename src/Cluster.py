@@ -25,7 +25,7 @@ class Member():
         x=5
         if self.eigenkmer2=='':
             x=len(self.eigenkmer1)-8
-        f1=[13,12,11,10,9,45] #N=20
+        f1=[1,1,1,1,1,4] #N=20
         f2=[1,4,16,64,256,128]
         kmerscore=list(map(lambda x,y:x/y,f1,f2))
         self.score=s/kmerscore[x]
@@ -49,12 +49,31 @@ class Member():
     def set_rank(self,rank):
         self.rank=rank
         for seq in self.family:
-            seq.set_cluster_num(rank)
+            if seq.get_cluster_num()==-1:
+                seq.set_cluster_num(rank)
+
+class Member2():
+    def __init__(self,feature,count,seq):
+        self.feature=feature
+        self.count=count
+        self.family=[seq]
+        self.relcount=0
+
+    def addcount(self,count):
+        self.count+=count
+    
+    def setrelcount(self,N):
+        self.relcount=self.count/N
+
 
 class Cluster():
-    def __init__(self,seqdata:list[Sequence],kmerlist,round,goal,N):
+    def __init__(self,seqdata:list[Sequence],kmerlist,round,goal,N,kmeramount):
+        '''
+        N:序列的总数量
+        '''
         self.head=[]
-        self.head2={}
+        self.head2=[]
+        self.head2feature=[]
         self.data=seqdata
         self.kmers=kmerlist
         self.size=0 #number of clusters
@@ -62,48 +81,50 @@ class Cluster():
         self.round=round
         self.goal=goal
         self.N=N
-        self.count_for_test=0
-    
+        self.kmercnt=kmeramount
+
     def set_cluster_data(self):
         self.__get_cluster()
+        print("Clustering finished, sorting...")
         self.__sort_cluster()
+        print("Combining clusters...")
         self.__combine_cluster()
+        print("Combining finished, predicting...")
         self.__sort_family()
         self.__set_rank()    
         self.__record_cluster_data()
 
+    def issimilar(self,feature:list[str],featurelist:list[list[str]]):
+        for x in featurelist:
+            #print(feature,x)
+            str1=''.join(feature)
+            str2=''.join(x)
+            #print(str1,str2)
+            if self.__get_distance2(str1,str2)<0.3:
+                return True,x
+        return False,0
+    
     def set_cluster_data2(self):
+        Clu_cnt=0 #number of clusters
+        Clu_seq_cnt=0 #number of sequences in clusters
+        Seq_cnt=0 #number of testing sequences 
         for seq in self.data:
-            feature=tuple(seq.get_kmer_list2())
-            if feature in self.head2.keys():
-                self.head2[feature]['count']+=seq.get_aptamer_count()
-                self.count_for_test+=1
-            else:
-                self.head2[feature]={}
-                self.head2[feature]['represent']=seq.get_aptamer_seq()
-                self.head2[feature]['mfestructure']=seq.get_aptamer_ct()
-                self.head2[feature]['count']=seq.get_aptamer_count()
-                self.head2[feature]['flag']=0
-        '''
-        cnt=0
-        for x in list(self.head2.keys()):
-            cnt+=1
-            print(cnt)
-            if self.head2[x].get('flag')!=0:
-                continue
-            else:
-                self.head2[x]['flag']=1
-                for y in list(self.head2.keys()):
-                    if self.head2[y].get('flag')!=0:
-                        continue
-                    else:
-                        if self.__similarity2(self.head2[x]['represent'],self.head2[y]['represent']):
-                            self.head2[x]['count']+=self.head2[y]['count']
-                            self.head2[y]['flag']=2
-        self.head2 = {key: value for key, value in self.head2.items() if value['flag'] < 2}
-        '''
+            Seq_cnt+=1
+            feature=seq.get_kmer_list2()
+            flag,clufeature=self.issimilar(feature,self.head2feature)
+            if flag:
+                Clu_seq_cnt+=1
+                index=self.head2feature.index(clufeature)
+                self.head2[index].addcount(seq.get_aptamer_count())
+            elif Clu_cnt<100:
+                self.head2.append(Member2(feature,seq.get_aptamer_count(),seq))
+                self.head2feature.append(feature)
+                Clu_cnt+=1
+                Clu_seq_cnt+=1
+            if Clu_cnt%10==0:
+                print(Clu_cnt,Clu_seq_cnt,Seq_cnt)
         for x in self.head2:
-            self.head2[x]['relcount']=self.head2[x]['count']/self.N
+            x.setrelcount(self.N)
 
     def get_recommend_aptamer(self):
         cnt=0
@@ -130,7 +151,6 @@ class Cluster():
         including the aptamer sequence and its count.
         """
         cnt=1
-        data=[]
         for head in self.head:
             print(f'Cluster {cnt}:, Eigenkmer: {head.eigenkmer1} {head.eigenkmer2}, Cluster size: {head.get_size()}, Cluster score: {head.get_score()}')
             cnt+=1
@@ -143,59 +163,28 @@ class Cluster():
                     break
             if cnt==10:
                 break
-        '''
-        cnt=1
-        for head in self.head:
-            data.append([cnt,head.eigenkmer1,head.eigenkmer2,head.get_size(),head.get_score()])
-            cnt+=1
-            if cnt==100:
-                break
-        df=pd.DataFrame(data, columns=['cluster','kmer1','kmer2','size','score'])
-        path= str(os.getcwd()) + "/dataset"
-        df.to_csv(path+f'/Cluster_data_for_round{self.round}.csv', index=False)
-        '''
 
-    def __levenshtein_distance(self,str1,str2):
-        if len(str1) < len(str2):
-            return self.__levenshtein_distance(str2,str1)
-
-        if len(str2) == 0:
-            return len(str1)
-
-        previous_row = range(len(str2) + 1)
-        for i, c1 in enumerate(str1):
-            current_row = [i + 1]
-            for j, c2 in enumerate(str2):
-                insertions = previous_row[j + 1] + 1
-                deletions = current_row[j] + 1
-                substitutions = previous_row[j] + (c1 != c2)
-                current_row.append(min(insertions, deletions, substitutions))
-            previous_row = current_row
-        return previous_row[-1]
-    
-    def __similarity2(self,str1:str,str2:str):
-        dis=0
-        for x in range(len(str1)):
-            if str1[x]!=str2[x]:
-                dis+=1
-        if dis/max(len(str1),len(str2))<=0.06:
-            return True
-        else:
-            return False
-        
     def __get_cluster(self):
-        flag=1
+        flag=1 # Handle eigenkmer with k>=8
+        Kmer_cnt=0
         for x in range(len(self.kmers)):
+            Kmer_cnt+=1
+            if Kmer_cnt%100==0:
+                print(f"{Kmer_cnt}/{self.kmercnt}")
             if len(self.kmers[x])==1:
                 self.__set_longkmer(self.kmers[x])
-            elif flag:
-                self.__renew_seqrep()
+            elif flag: # Reset the state of all sequences (If they have been clustered, set state to False)
+                self.__renew_seqrep() 
                 self.__set_shortkmer(self.kmers[x])
                 flag=0
             else:
                 self.__set_shortkmer(self.kmers[x])
 
     def __set_longkmer(self,eigenkmer):
+        '''
+        因为是先选eigenkmer再选序列，所以不需要考虑eigenkmer的重复问题
+        在_add_cluster_longkmer中，如果head的最后一个元素和eigenkmer相同，就把seq加入这个head，这个head里面的元素都包含这个eigenkmer
+        '''
         eigenkmer=eigenkmer[0]
         for seq in self.data:
             if seq.get_state()==True:
@@ -204,7 +193,6 @@ class Cluster():
             if eigenkmer in kmer:
                 self.__add_cluster_longkmer(seq,eigenkmer)
                 seq.set_state(True)
-
 
     def __set_shortkmer(self,eigenkmer):
         kmer1=eigenkmer[0]
@@ -245,6 +233,7 @@ class Cluster():
                 newhead=Member(seq,x1,x2,self.N)
                 self.head.append(newhead)
                 self.size+=1
+                
     def __renew_seqrep(self):
         for seq in self.data:
             seq.set_state(False)
@@ -283,8 +272,7 @@ class Cluster():
         distance1=self.__get_distance(eigenkmer1_1,eigenkmer2_1)+self.__get_distance(eigenkmer1_2,eigenkmer2_2)
         distance2=self.__get_distance(eigenkmer1_1,eigenkmer2_2)+self.__get_distance(eigenkmer1_2,eigenkmer2_1)
         distance=min(distance1,distance2)
-        length=max(len(eigenkmer1_1)+len(eigenkmer1_2),len(eigenkmer2_1)+len(eigenkmer2_2))
-        if distance/length<=0.1:
+        if distance<=2:
             return True
         else:
             return False
@@ -301,6 +289,10 @@ class Cluster():
             tot+=1
     
     def __get_distance(self, s1, s2):
+        '''
+        只允许开头结尾有不相同之处
+        求两字符串编辑距离
+        '''
         m = len(s1)
         n = len(s2)
         dp = [[0]*(n+1) for _ in range(2)]
@@ -326,6 +318,26 @@ class Cluster():
         costFirst=max(endi,endj)-length
         costLast=max(m-endi,n-endj)
         return costFirst+costLast
+    
+    def __get_distance2(self, s1, s2):
+        '''
+        允许中间有不相同之处
+        求两字符串编辑距离
+        '''
+        m = len(s1)
+        n = len(s2)
+        dp = [[0]*(n+1) for i in range(m+1)]
+        for i in range(m+1):
+            dp[i][0] = i
+        for j in range(n+1):
+            dp[0][j] = j
+        for i in range(1,m+1):
+            for j in range(1,n+1):
+                if s1[i-1] == s2[j-1]:
+                    dp[i][j] = min(dp[i-1][j-1],dp[i-1][j]+1,dp[i][j-1]+1)
+                else:
+                    dp[i][j] = min(dp[i-1][j],dp[i][j-1],dp[i-1][j-1])+1
+        return dp[m][n]/max(m,n)
 
     def __is_valid(self,kmer,pos,kmer_len,kmer1,kmer2):
         position1 = [i for i, x in enumerate(kmer) if x == kmer1]
