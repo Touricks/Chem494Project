@@ -71,6 +71,9 @@ op: Whether to allow the reuse of ct files. When op=True, the reuse of ct files 
 
 Warning: The ct file contains basic information about the composition of the sequence. If changes are to be made to the sequence file itself (such as modifying lenofseq), op should be set to False, as the ct file is a file containing information about the hairpin structure of the sequence, which needs to be updated in this case.
 
+## Prediction function intro
+If you want to predict the aptamer for a substrate molecule based on a round of data, you just need to put the prefix of that round's data file name into pred=[].
+
 ## Evaluation function intro
 Predictions based on a single round of data are inevitably biased, but we can use some basic methods to eliminate obviously incorrect predicted sequences.
 
