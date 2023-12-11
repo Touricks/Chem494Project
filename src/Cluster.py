@@ -286,8 +286,8 @@ class Cluster():
     
     def __get_distance(self, s1, s2):
         '''
-        只允许开头结尾有不相同之处
-        求两字符串编辑距离
+        Get the editable distance between two strings
+        Only allow differences in the beginning and ending region 
         '''
         m = len(s1)
         n = len(s2)
@@ -317,8 +317,8 @@ class Cluster():
     
     def __get_distance2(self, s1, s2):
         '''
-        允许中间有不相同之处
-        求两字符串编辑距离
+        Get the editable distance between two strings
+        Allow differences in any places
         '''
         m = len(s1)
         n = len(s2)
