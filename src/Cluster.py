@@ -181,10 +181,6 @@ class Cluster():
                 self.__set_shortkmer(self.kmers[x])
 
     def __set_longkmer(self,eigenkmer):
-        '''
-        因为是先选eigenkmer再选序列，所以不需要考虑eigenkmer的重复问题
-        在_add_cluster_longkmer中，如果head的最后一个元素和eigenkmer相同，就把seq加入这个head，这个head里面的元素都包含这个eigenkmer
-        '''
         eigenkmer=eigenkmer[0]
         for seq in self.data:
             if seq.get_state()==True:
