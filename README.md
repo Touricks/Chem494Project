@@ -21,14 +21,21 @@ export PATH=${HOME}/Tutorial/Progs:${PATH}
 ```
 
 ## Execution instructions
-1. Add data to data/ folder.
-2. Place one fastq file in it, indicating we would provide prediction based on data from this file.
+1. Add fastq file from SELEX to data/prediction folder
 
-    Filename can be anything but only one file should exist in this folder.
-3. Execute the program with command line:
+2. Add the primer you use in data/primer.txt, which influence the specific sequence structure you want to analyse (See round.py for more specific)
+   
+3. Switch the parameters to satisfy your thinking (See "parameters meaning" below)
+   
+4. Set prediction file (See "Prediction function introduction" below)
+   
+(Optional) 5. Set evaluation file (See "Evaluation function introduction" below)
+
+6. Execute the program with command line:
 ```
 python src/main.py
 ```
+
 ## Project architecture
 
 ```
@@ -71,10 +78,11 @@ op: Whether to allow the reuse of ct files. When op=True, the reuse of ct files 
 
 Warning: The ct file contains basic information about the composition of the sequence. If changes are to be made to the sequence file itself (such as modifying lenofseq), op should be set to False, as the ct file is a file containing information about the hairpin structure of the sequence, which needs to be updated in this case.
 
-## Prediction function intro
+## Prediction function introduction
 If you want to predict the aptamer for a substrate molecule based on a round of data, you just need to put the prefix of that round's data file name into pred=[].
+For example, you add a file called apt.fastq in data/prediction folder, than you can set pred=['apt'] to finish the setep.
 
-## Evaluation function intro
+## Evaluation function introduction
 Predictions based on a single round of data are inevitably biased, but we can use some basic methods to eliminate obviously incorrect predicted sequences.
 
 Assume we make predictions based on the 9th round of apt data, which corresponds to setting pred=['aptr9'] in the program.
