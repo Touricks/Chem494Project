@@ -89,9 +89,6 @@ class Round():
         return self.recommend
     
     def __get_sequence_with_primer(self,rnd,foldername):
-        # get_sequence: 从fastq文件中提取序列
-        # rnd: 本次实验的轮次（或特定target）
-        # return: 对应Selex轮次中所有序列组成的列表
         current_file_path = os.path.abspath(__file__)
         print(current_file_path)
         data_file=current_file_path.split('src')[0]+'data/'
@@ -113,13 +110,6 @@ class Round():
         return df
 
     def __getN30(self,seq,primer):
-        # getN30: 通过primer信息从序列seq中提取N30
-        # seq: 本次实验的序列
-        # primer_path: 本次实验的引物文件路径
-        # return: N30序列
-        # 通过实验验证第二段底物在序列数据中完全不存在(一个都没有)，
-        # 第一段底物出现概率为88% （且各轮数据均相同），因此策略为
-        # 不统计第一段底物不出现的序列，忽略第二段底物，直接从第一段底物后面取30bp
         pos=seq.find(primer[0].strip())
         if pos==-1:
             success=False
@@ -130,9 +120,6 @@ class Round():
         return N30, success
     
     def __get_count_single_rnd(self,seq_list):
-        # get_count_single_rnd: 计算单轮数据中每个序列的出现次数
-        # seq_list: 单轮数据的序列列表
-        # return: 单轮数据中每个序列的出现次数
         df=pd.DataFrame(seq_list,columns=['seq'])
         count_df=df.groupby('seq',as_index=False).value_counts(sort=True,ascending=False)
         seq_sum=count_df['count'].sum()
@@ -151,18 +138,15 @@ class Round():
         return count_df
     
     def __add_RNAfold_data(self,count_df):
-        # add_RNAfold_data: 将RNAfold计算得到的二级结构和自由能添加到库中
-        # rnd: 本次实验的轮次
-        # count_df: 本次实验的序列计数数据
-        # return: 无
+
         print(f"COUNT_DF LENGTH=",len(count_df))
-        seq_list=count_df['seq'].tolist() #将序列转化为列表
+        seq_list=count_df['seq'].tolist() 
         print(f"SEQ_LIST LENGTH=",len(seq_list))
-        count_list=count_df['count'].tolist() #将出现次数转化为列表
-        #造ct，dg数据
+        count_list=count_df['count'].tolist() 
+
         flag=0
         new_ct_file=None
-        #是否保留有ct文件的序列
+
         path_ct = str(os.getcwd())+f"/ctfiledatabase/"
         for file in os.listdir(path_ct):
             if file.replace("_ct.txt", "") == self.round:
