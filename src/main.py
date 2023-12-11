@@ -58,15 +58,7 @@ def evaluation(predData,evaData,rnd,eval):
     
 if __name__ == '__main__': 
     # parameter= [lenofseq,goal,num1,num2,op] 
-    # 起始值与文件中的primer有关
-    # lenofseq: 序列长度
-    # goal: 选取的序列数量
-    # num1: kmerlen<8时的统计数量，推荐为50
-    # num2: kmerlen>8时的统计数量，推荐为1000
-    # op: 是否允许复用ct文件 警告：ct文件包含序列组成的基本信息
-    # 最终kmer数量为num1*num1*2+num2*5
     parameter=[36,20,50,1000,False]
-    #parameter=['with_primer',20,4,10]  # Test
     pred=['caff20']
     eval=['caff12','caff20']
     predData=[]
